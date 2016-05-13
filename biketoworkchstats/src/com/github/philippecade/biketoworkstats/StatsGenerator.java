@@ -93,11 +93,11 @@ public class StatsGenerator {
 			dumpReport(out, generateReport(teams, AbstractParticipant::compareByBike, 
 					AbstractParticipant::getByBikeFormatted));
 			out.println("--------");
-			out.println("Team Name,Total Kilometers");
+			out.println("Member Name,Average By Bike");
 			dumpReport(out, generateReport(getAllMembers(teams), AbstractParticipant::compareByBike, 
 					AbstractParticipant::getByBikeFormatted));
 			out.println("--------");
-			out.println("Member Name,Average By Bike");
+			out.println("Team Name,Total Kilometers");
 			dumpReport(out, generateReport(teams, AbstractParticipant::compareKm, 
 					AbstractParticipant::getKmFormatted));
 			out.println("--------");
