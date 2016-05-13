@@ -4,7 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Properties;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -23,6 +26,9 @@ public class Main {
 	private File outputFile;
 	private JLabel statusLabel;
 	private JButton openButton;
+	
+	private final static String PROP_FILE_NAME = System.getProperty("user.home") + "/.btwstats.txt";
+	private static final String LAST_FOLDER_PROP = "lastFolder";
 	
 	Main() {
 		this.statsGenerator = new StatsGenerator();
@@ -54,9 +60,14 @@ public class Main {
 		JButton chooseFileButton = new JButton("Choose statistics file");
 		chooseFileButton.addActionListener((event) -> {
 			JFileChooser fileChooser = new JFileChooser();
+			File lastFolder = getLastFolder();
+			if (lastFolder != null) {
+				fileChooser.setCurrentDirectory(lastFolder);
+			}
 			if (JFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(panel)) {
 				try {
 					this.outputFile = this.statsGenerator.generateReports(fileChooser.getSelectedFile());
+					rememberLastFolder(fileChooser.getSelectedFile().getParentFile());
 					this.openButton.setEnabled(true);
 					showMessage("Output stored to: "+this.outputFile);
 				} catch (IOException e) {
@@ -79,6 +90,38 @@ public class Main {
 		return panel;
 	}
 	
+	/**
+	 * Remembers the folder where the last stats were read from
+	 * @param lastFolder
+	 */
+	private void rememberLastFolder(File lastFolder) {
+		Properties properties = new Properties();
+		properties.setProperty(LAST_FOLDER_PROP, lastFolder.getAbsolutePath());
+		try (FileWriter writer = new FileWriter(PROP_FILE_NAME)) {
+			properties.store(writer, "Stored by Bike To Work Statistics");
+		} catch (IOException e) {
+			showMessage(e);
+		}
+	}
+	
+	/**
+	 * Returns the last folder where the stats were read from
+	 * @return folder or {@code null}
+	 */
+	private File getLastFolder() {
+		if (!new File(PROP_FILE_NAME).exists()) {
+			return null;
+		}
+		try (FileReader reader = new FileReader(PROP_FILE_NAME)) {
+			Properties properties = new Properties();
+			properties.load(reader);
+			return new File(properties.getProperty(LAST_FOLDER_PROP));
+		} catch (IOException e) {
+			// ignore if not found
+			return null;
+		}
+	}
+
 	JComponent buildBottomComponent() {
 		this.statusLabel = new JLabel();
 		this.statusLabel.setText("Ready");

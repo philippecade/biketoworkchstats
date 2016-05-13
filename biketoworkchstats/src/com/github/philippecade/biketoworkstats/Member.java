@@ -8,8 +8,18 @@ package com.github.philippecade.biketoworkstats;
  ****************************************************************************/
 class Member extends AbstractParticipant implements IParticipant {
 	
+	private int memberId;
+
 	Member() {
 		// empty
+	}
+
+	void setId(int memberId) {
+		this.memberId = memberId;
+	}
+	
+	int getId() {
+		return this.memberId;
 	}
 
 }

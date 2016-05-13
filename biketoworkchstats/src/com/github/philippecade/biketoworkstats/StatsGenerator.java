@@ -22,13 +22,13 @@ public class StatsGenerator {
 
 	private static final int TEAM_NAME_COLUMN = 9;
 	private static final int TEAM_KM = 33;
-	private static final int MEMBER_1_NAME = 12;
+	private static final int MEMBER_1_ID = 11;
 	private static final int MEMBER_1_KM = 38;
-	private static final int MEMBER_2_NAME = 21;
+	private static final int MEMBER_2_ID = 20;
 	private static final int MEMBER_2_KM = 42;
-	private static final int MEMBER_3_NAME = 25;
+	private static final int MEMBER_3_ID = 24;
 	private static final int MEMBER_3_KM = 46;
-	private static final int MEMBER_4_NAME = 29;
+	private static final int MEMBER_4_ID = 28;
 	private static final int MEMBER_4_KM = 50;
 	
 	/**
@@ -52,10 +52,10 @@ public class StatsGenerator {
 				team.setKm(Integer.parseInt(columns[TEAM_KM]));
 				team.setByBike(Double.parseDouble(columns[TEAM_KM+1])/100);
 
-				team.addMember(getMember(columns, MEMBER_1_NAME, MEMBER_1_KM));
-				team.addMember(getMember(columns, MEMBER_2_NAME, MEMBER_2_KM));
-				team.addMember(getMember(columns, MEMBER_3_NAME, MEMBER_3_KM));
-				team.addMember(getMember(columns, MEMBER_4_NAME, MEMBER_4_KM));
+				team.addMember(getMember(columns, MEMBER_1_ID, MEMBER_1_KM));
+				team.addMember(getMember(columns, MEMBER_2_ID, MEMBER_2_KM));
+				team.addMember(getMember(columns, MEMBER_3_ID, MEMBER_3_KM));
+				team.addMember(getMember(columns, MEMBER_4_ID, MEMBER_4_KM));
 				
 				teams.add(team);
 			}
@@ -66,13 +66,14 @@ public class StatsGenerator {
 	/**
 	 * Returns a member
 	 * @param columns
-	 * @param nameIndex
+	 * @param idIndex
 	 * @param kmIndex
 	 * @return
 	 */
-	Member getMember(String[] columns, int nameIndex, int kmIndex) {
+	Member getMember(String[] columns, int idIndex, int kmIndex) {
 		Member member = new Member();
-		member.setName(columns[nameIndex]+" "+columns[nameIndex+1]);
+		member.setId(Integer.parseInt(columns[idIndex]));
+		member.setName(columns[idIndex+1]+" "+columns[idIndex+2]);
 		member.setKm(Integer.parseInt(columns[kmIndex]));
 		member.setByBike(Double.parseDouble(columns[kmIndex+1])/100);
 		return member;
