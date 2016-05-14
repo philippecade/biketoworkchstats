@@ -12,6 +12,7 @@ import java.util.List;
 class Team extends AbstractParticipant {
 	
 	private final List<Member> members;
+	private String calendarUrl;
 
 	Team(String name) {
 		setName(name);
@@ -24,6 +25,14 @@ class Team extends AbstractParticipant {
 
 	List<Member> getMembers() {
 		return this.members;
+	}
+
+	void setCalendarUrl(String calendarUrl) {
+		this.calendarUrl = calendarUrl;
+	}
+	
+	String getCalendarUrl() {
+		return this.calendarUrl;
 	}
 
 }

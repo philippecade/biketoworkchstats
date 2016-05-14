@@ -6,9 +6,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -21,6 +25,7 @@ import java.util.stream.Collectors;
 public class StatsGenerator {
 
 	private static final int TEAM_NAME_COLUMN = 9;
+	private static final int TEAM_CALENDAR_URL = 10;
 	private static final int TEAM_KM = 33;
 	private static final int MEMBER_1_ID = 11;
 	private static final int MEMBER_1_KM = 38;
@@ -49,6 +54,7 @@ public class StatsGenerator {
 				}
 
 				Team team = new Team(columns[TEAM_NAME_COLUMN]);
+				team.setCalendarUrl(columns[TEAM_CALENDAR_URL]);
 				team.setKm(Integer.parseInt(columns[TEAM_KM]));
 				team.setByBike(Double.parseDouble(columns[TEAM_KM+1])/100);
 
@@ -105,10 +111,41 @@ public class StatsGenerator {
 			out.println("Member Name,Total Kilometers");
 			dumpReport(out, generateReport(getAllMembers(teams), AbstractParticipant::compareKm, 
 					AbstractParticipant::getKmFormatted));
+			Map<Date, BikingDay> calendar = readCalendars(teams);
+			out.println("--------");
+			out.println("Day,Num Riders,Kilometers");
+			calendar.forEach((d, day) -> {
+				out.println(new SimpleDateFormat("dd.MMM.yyyy").format(d)+","+day.getNumRiders()+","+day.getKm());
+			});
 			return outputFile;
 		}
 	}
 	
+	private Map<Date, BikingDay> readCalendars(List<Team> teams) {
+		Map<Date, BikingDay> calendar = new TreeMap<>();
+		teams.forEach(team -> {
+			try {
+				CalendarParser parser = new CalendarParser(team.getCalendarUrl());
+				parser.setMemberConsumer(event -> {
+					event.getBikeDays().forEach(d -> {
+						BikingDay bikingDay = calendar.get(d);
+						if (bikingDay == null) {
+							bikingDay = new BikingDay();
+							calendar.put(d, bikingDay);
+						}
+						bikingDay.addRider();
+						bikingDay.addDistance(event.getKmPerDay());
+					});
+				});
+				parser.parse();
+			} catch (Exception e) {
+				// TODO: make this better
+				e.printStackTrace();
+			}
+		});
+		return calendar;
+	}
+
 	/**
 	 * Generates a name for the output file from the input file
 	 * @param inputFile
