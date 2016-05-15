@@ -20,84 +20,59 @@
     <script type="text/javascript">
       // the map center
       var mapCenterCoord = ol.proj.fromLonLat([7.55549, 47.5637]);
-      var features = [];
-      function addCircle(radius) {
-        var circle = new ol.geom.Circle(mapCenterCoord, radius);
-        features.push(new ol.Feature({
-          geometry: circle
-        }));
-      }
       // the circle's radii to draw. Unit is km
       var radii = [
 // replace values here with your own km per day/2 values
-18.5,
-14,
-10.5,
-10,
-8,
-8.1,
-7.6,
-7.5,
-7.4,
-7,
-7.1,
-6.6,
-6.5,
-6.1,
-6.2,
-6.0,
-5.5,
-5.6,
-5.7,
-5.8,
-5.1,
-5,
-4.5,
-4.2,
-4.1,
-4,
-3.5,
-3.3,
-3.2,
-3.1,
-3,
+1,
+1.1,
+1.5,
+1.6,
+1.7,
+2,
+2.1,
 2.5,
 2.6,
 2.7,
 2.8,
 2.9,
-2.1,
-2,
-1.7,
-1.6,
-1.5,
-1.1,
-1,
+3,
+3.1,
+3.2,
+3.3,
+3.5,
+4,
+4.1,
+4.2,
+4.5,
+5,
+5.1,
+5.5,
+5.6,
+5.7,
+5.8,
+6.0,
+6.1,
+6.2,
+6.5,
+6.6,
+7,
+7.1,
+7.4,
+7.5,
+7.6,
+8,
+8.1,
+10,
+10.5,
+14,
+18.5,
 ];
-      radii.forEach(function(value) {
-        addCircle(value*1000);
-      });
       // map
       var map = new ol.Map({
         target: 'map',
         layers: [
           new ol.layer.Tile({
             source: new ol.source.OSM()
-          }),
-          new ol.layer.Vector({
-            source: new ol.source.Vector({
-              features: features
-            }),
-            style: [
-              new ol.style.Style({
-                stroke: new ol.style.Stroke({
-                color: 'rgb(0, 153, 213)',
-                width: 1
-              }),
-              fill: new ol.style.Fill({
-                color: 'rgba(0, 153, 213, 0.02)'
-              })
-              })]
           })
         ],
         view: new ol.View({
@@ -105,6 +80,39 @@
           zoom: 12
         })
       });
+      var circleSource;
+      // this method adds the circles after a timeout
+      var addLater = function(feature, timeout) {
+        window.setTimeout(function() {
+          circleSource.addFeature(feature);
+        }, timeout);
+      };
+      // source
+      circleSource = new ol.source.Vector({
+        loader: function() {
+          for (var i = 0; i < radii.length; i++) {
+            var feature = new ol.Feature({
+              geometry: new ol.geom.Circle(mapCenterCoord, radii[i]*1000)
+            });
+            addLater(feature, i*100);
+          }
+        }
+      });
+      // layer
+      var circleLayer = new ol.layer.Vector({
+        source: circleSource,
+        style: [
+          new ol.style.Style({
+            stroke: new ol.style.Stroke({
+            color: 'rgb(0, 153, 213)',
+            width: 1
+          }),
+          fill: new ol.style.Fill({
+            color: 'rgba(0, 153, 213, 0.02)'
+          })
+          })]
+      });
+      map.addLayer(circleLayer);
     </script>
   </body>
 </html>
