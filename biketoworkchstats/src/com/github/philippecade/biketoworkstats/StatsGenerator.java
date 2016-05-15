@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -113,6 +114,10 @@ public class StatsGenerator {
 					AbstractParticipant::getKmFormatted));
 			Map<Date, BikingDay> calendar = readCalendars(teams);
 			out.println("--------");
+			out.println("Member Name, Km per Day");
+			dumpReport(out, generateReport(getAllMembers(teams), Member::compareKmPerDay, 
+					Member::getKmPerDayFormatted));
+			out.println("--------");
 			out.println("Day,Num Riders,Kilometers");
 			calendar.forEach((d, day) -> {
 				out.println(new SimpleDateFormat("dd.MMM.yyyy").format(d)+","+day.getNumRiders()+","+day.getKm());
@@ -127,6 +132,8 @@ public class StatsGenerator {
 			try {
 				CalendarParser parser = new CalendarParser(team.getCalendarUrl());
 				parser.setMemberConsumer(event -> {
+					setMemberKmPerDay(teams, event.getMemberId(), event.getKmPerDay());
+					// fill the global calendar
 					event.getBikeDays().forEach(d -> {
 						BikingDay bikingDay = calendar.get(d);
 						if (bikingDay == null) {
@@ -144,6 +151,17 @@ public class StatsGenerator {
 			}
 		});
 		return calendar;
+	}
+
+	private void setMemberKmPerDay(List<Team> teams, int memberId, double kmPerDay) {
+		Optional<Member> member = getMember(teams, memberId);
+		if (member.isPresent()) {
+			member.get().setKmPerDay(kmPerDay);
+		}	
+	}
+
+	private Optional<Member> getMember(List<Team> teams, int memberId) {
+		return getAllMembers(teams).stream().filter(member -> member.getId() == memberId).findFirst();
 	}
 
 	/**
@@ -175,9 +193,9 @@ public class StatsGenerator {
 	 * @param valueFunction
 	 * @return table data
 	 */
-	private List<Object[]> generateReport(List<? extends IParticipant> participants, 
-			Comparator<IParticipant> comparator,
-			Function<IParticipant, String> valueFunction) {
+	private <T extends IParticipant> List<Object[]> generateReport(List<T> participants, 
+			Comparator<T> comparator,
+			Function<T, String> valueFunction) {
 		List<Object[]> data = new ArrayList<Object[]>();
 		participants.stream().
 			sorted(comparator).

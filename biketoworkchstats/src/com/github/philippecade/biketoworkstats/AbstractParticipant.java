@@ -11,8 +11,8 @@ import java.text.NumberFormat;
  */
 class AbstractParticipant implements IParticipant {
 
-	private static final NumberFormat BYBIKE_FORMAT = new DecimalFormat("#0.00 %");
-	private static final NumberFormat BYKM_FORMAT = new DecimalFormat("#0");
+	private static final NumberFormat BY_BIKE_FORMAT = new DecimalFormat("#0.00 %");
+	private static final NumberFormat BY_KM_FORMAT = new DecimalFormat("#0");
 
 	private String name;
 	private int km;
@@ -46,11 +46,11 @@ class AbstractParticipant implements IParticipant {
 	}
 	
 	public static String getByBikeFormatted(IParticipant p) {
-		return BYBIKE_FORMAT.format(p.getByBike());
+		return BY_BIKE_FORMAT.format(p.getByBike());
 	}
 
 	public static String getKmFormatted(IParticipant p) {
-		return BYKM_FORMAT.format(p.getKm());
+		return BY_KM_FORMAT.format(p.getKm());
 	}
 
 	/**
