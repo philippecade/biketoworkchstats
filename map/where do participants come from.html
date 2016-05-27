@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <link rel="stylesheet" href="http://openlayers.org/en/v3.15.1/css/ol.css" type="text/css">
+    <link rel="stylesheet" href="http://openlayers.org/en/v3.16.0/css/ol.css" type="text/css">
     <style>
       h2 {
         font-family: sans-serif;
@@ -11,7 +11,7 @@
         width: 100%;
       }
     </style>
-    <script src="http://openlayers.org/en/v3.15.1/build/ol.js" type="text/javascript"></script>
+    <script src="http://openlayers.org/en/v3.16.0/build/ol.js" type="text/javascript"></script>
     <title>Bike To Work</title>
   </head>
   <body>
@@ -67,21 +67,23 @@
 14,
 18.5,
 ];
+      // OpenCycleMap source
+      var osmSource = new ol.source.OSM({
+        attributions: [
+          new ol.Attribution({
+            html: 'All maps &copy; ' +
+                '<a href="http://www.opencyclemap.org/">OpenCycleMap</a>'
+          }),
+          ol.source.OSM.ATTRIBUTION
+        ],
+        url: 'http://{a-c}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png'
+      });
       // map
       var map = new ol.Map({
         target: 'map',
         layers: [
           new ol.layer.Tile({
-            source: new ol.source.OSM({
-              attributions: [
-                new ol.Attribution({
-                  html: 'All maps &copy; ' +
-                      '<a href="http://www.opencyclemap.org/">OpenCycleMap</a>'
-                }),
-                ol.source.OSM.ATTRIBUTION
-              ],
-              url: 'http://{a-c}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png'
-            })
+            source: osmSource
           })
         ],
         view: new ol.View({
@@ -121,7 +123,9 @@
           })
           })]
       });
-      map.addLayer(circleLayer);
+      map.once('postrender', function(event) {
+        map.addLayer(circleLayer);
+      });
     </script>
   </body>
 </html>
