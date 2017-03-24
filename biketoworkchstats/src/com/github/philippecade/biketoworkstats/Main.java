@@ -15,6 +15,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
  * Main UI.
@@ -27,7 +28,7 @@ public class Main {
 	private JLabel statusLabel;
 	private JButton openButton;
 	
-	private final static String PROP_FILE_NAME = System.getProperty("user.home") + "/.btwstats.txt";
+	private static final String PROP_FILE_NAME = System.getProperty("user.home") + "/.btwstats.txt";
 	private static final String LAST_FOLDER_PROP = "lastFolder";
 	
 	Main() {
@@ -58,8 +59,9 @@ public class Main {
 		JPanel panel = new JPanel();
 
 		JButton chooseFileButton = new JButton("Choose statistics file");
-		chooseFileButton.addActionListener((event) -> {
+		chooseFileButton.addActionListener(event -> {
 			JFileChooser fileChooser = new JFileChooser();
+			fileChooser.setFileFilter(new FileNameExtensionFilter("CSV file", "csv"));
 			File lastFolder = getLastFolder();
 			if (lastFolder != null) {
 				fileChooser.setCurrentDirectory(lastFolder);
@@ -79,7 +81,7 @@ public class Main {
 		
 		this.openButton = new JButton("Open formatted statistics");
 		this.openButton.setEnabled(false);
-		this.openButton.addActionListener((event) -> {
+		this.openButton.addActionListener(event -> {
 			try {
 				Desktop.getDesktop().open(this.outputFile);
 			} catch (Exception e) {

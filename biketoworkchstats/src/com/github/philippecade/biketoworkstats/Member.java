@@ -13,19 +13,19 @@ class Member extends AbstractParticipant implements IParticipant {
 	
 	private static final NumberFormat BY_KM_PER_DAY_FORMAT = new DecimalFormat("#0.0");
 
-	private int memberId;
+	private String email;
 	private double kmPerDay;
 
 	Member() {
 		// empty
 	}
 
-	void setId(int memberId) {
-		this.memberId = memberId;
+	void setEmail(String memberEmail) {
+		this.email = memberEmail;
 	}
 	
-	int getId() {
-		return this.memberId;
+	String getEmail() {
+		return this.email;
 	}
 	
 	void setKmPerDay(double kmPerDay) {
@@ -52,6 +52,22 @@ class Member extends AbstractParticipant implements IParticipant {
 			return cmp;
 		}
 		return m1.getName().compareTo(m2.getName());
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("Member [getName()=");
+		builder.append(getName());
+		builder.append(", getEmail()=");
+		builder.append(this.email);
+		builder.append(", kmPerDay=");
+		builder.append(this.kmPerDay);
+		builder.append("]");
+		return builder.toString();
 	}
 	
 }

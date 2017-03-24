@@ -12,11 +12,10 @@ import java.util.List;
 class Team extends AbstractParticipant {
 	
 	private final List<Member> members;
-	private String calendarUrl;
 
 	Team(String name) {
 		setName(name);
-		this.members = new ArrayList<Member>();
+		this.members = new ArrayList<>();
 	}
 	
 	void addMember(Member member) {
@@ -27,12 +26,22 @@ class Team extends AbstractParticipant {
 		return this.members;
 	}
 
-	void setCalendarUrl(String calendarUrl) {
-		this.calendarUrl = calendarUrl;
-	}
-	
-	String getCalendarUrl() {
-		return this.calendarUrl;
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("Team [getName()=");
+		builder.append(getName());
+		builder.append(", getMembers()=");
+		builder.append(getMembers());
+		builder.append(", getKm()=");
+		builder.append(getKm());
+		builder.append(", getByBike()=");
+		builder.append(getByBike());
+		builder.append("]");
+		return builder.toString();
 	}
 
 }
