@@ -37,7 +37,7 @@ public class Main {
 
 	private void showUI() {
 		//1. Create the frame.
-		JFrame frame = new JFrame("bikewtowork.ch Statistics");
+		JFrame frame = new JFrame("biketowork.ch Statistics");
 
 		//2. Optional: What happens when the frame closes?
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
