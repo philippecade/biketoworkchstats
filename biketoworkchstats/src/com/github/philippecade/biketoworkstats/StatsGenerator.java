@@ -54,15 +54,22 @@ public class StatsGenerator {
 				team.setKm(Integer.parseInt(columns[TEAM_KM]));
 				team.setByBike(Double.parseDouble(columns[TEAM_PERCENT_BY_BIKE]));
 
-				team.addMember(getMember(columns, MEMBER_1_EMAIL, MEMBER_1_KM));
-				team.addMember(getMember(columns, MEMBER_2_EMAIL, MEMBER_2_KM));
-				team.addMember(getMember(columns, MEMBER_3_EMAIL, MEMBER_3_KM));
-				team.addMember(getMember(columns, MEMBER_4_EMAIL, MEMBER_4_KM));
+				addNonEmptyMember(team, getMember(columns, MEMBER_1_EMAIL, MEMBER_1_KM));
+				addNonEmptyMember(team, getMember(columns, MEMBER_2_EMAIL, MEMBER_2_KM));
+				addNonEmptyMember(team, getMember(columns, MEMBER_3_EMAIL, MEMBER_3_KM));
+				addNonEmptyMember(team, getMember(columns, MEMBER_4_EMAIL, MEMBER_4_KM));
 				
 				teams.add(team);
 			}
 		}
 		return teams;
+	}
+	
+	private void addNonEmptyMember(Team team, Member member) {
+		if (!member.getEmail().isEmpty()) {
+			team.addMember(member);
+		}
+		
 	}
 	
 	/**
