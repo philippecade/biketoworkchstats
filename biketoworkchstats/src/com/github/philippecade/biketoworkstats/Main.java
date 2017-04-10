@@ -71,7 +71,7 @@ public class Main {
 					this.outputFile = this.statsGenerator.generateReports(fileChooser.getSelectedFile());
 					rememberLastFolder(fileChooser.getSelectedFile().getParentFile());
 					this.openButton.setEnabled(true);
-					showMessage("Output stored to: "+this.outputFile);
+					showMessage("Output stored to: "+this.outputFile.getParent());
 				} catch (IOException e) {
 					showMessage(e);
 				}

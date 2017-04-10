@@ -1,8 +1,5 @@
 package com.github.philippecade.biketoworkstats;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-
 /*****************************************************************************
  * Bike To Work member
  *
@@ -11,8 +8,6 @@ import java.text.NumberFormat;
  ****************************************************************************/
 class Member extends AbstractParticipant implements IParticipant {
 	
-	private static final NumberFormat BY_KM_PER_DAY_FORMAT = new DecimalFormat("#0.0");
-
 	private String email;
 	private double kmPerDay;
 
@@ -34,10 +29,6 @@ class Member extends AbstractParticipant implements IParticipant {
 	
 	double getKmPerDay() {
 		return this.kmPerDay;
-	}
-
-	public static String getKmPerDayFormatted(Member m) {
-		return BY_KM_PER_DAY_FORMAT.format(m.getKmPerDay());
 	}
 
 	/**

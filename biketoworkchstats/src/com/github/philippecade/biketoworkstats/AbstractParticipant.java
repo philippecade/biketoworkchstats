@@ -1,8 +1,5 @@
 package com.github.philippecade.biketoworkstats;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-
 /**
  * Base implementation for a team or member.
  *
@@ -10,9 +7,6 @@ import java.text.NumberFormat;
  * @since May 4, 2016
  */
 class AbstractParticipant implements IParticipant {
-
-	private static final NumberFormat BY_BIKE_FORMAT = new DecimalFormat("#0.00 %");
-	private static final NumberFormat BY_KM_FORMAT = new DecimalFormat("#0");
 
 	private String name;
 	private int km;
@@ -45,14 +39,6 @@ class AbstractParticipant implements IParticipant {
 		return this.name;
 	}
 	
-	public static String getByBikeFormatted(IParticipant p) {
-		return BY_BIKE_FORMAT.format(p.getByBike());
-	}
-
-	public static String getKmFormatted(IParticipant p) {
-		return BY_KM_FORMAT.format(p.getKm());
-	}
-
 	/**
 	 * Compares by bike descending and then by name
 	 * @param p1

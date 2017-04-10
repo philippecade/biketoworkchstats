@@ -1,16 +1,21 @@
 package com.github.philippecade.biketoworkstats;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import javax.imageio.ImageIO;
 
 /**
  * Extracts data from the bike to work status file
@@ -19,6 +24,10 @@ import java.util.stream.Collectors;
  * @since May 4, 2016
  */
 public class StatsGenerator {
+
+	private static final NumberFormat BY_BIKE_FORMAT = new DecimalFormat("#0.00 %");
+	private static final NumberFormat BY_KM_FORMAT = new DecimalFormat("#0");
+	private static final NumberFormat BY_KM_PER_DAY_FORMAT = new DecimalFormat("#0.0");
 
 	private static final String SEPARATOR = "--------";
 	private static final int TEAM_NAME_COLUMN = 5;
@@ -101,31 +110,58 @@ public class StatsGenerator {
 	 * @throws IOException 
 	 */
 	public File generateReports(File inputFile) throws IOException {
-		File outputFile = getOutputFile(inputFile);
-		try (PrintStream out = new PrintStream(outputFile)) {
+		File reportOutputFile = getReportOutputFile(inputFile);
+		List<BufferedImage> images = new ArrayList<>();
+		try (PrintStream out = new PrintStream(reportOutputFile)) {
 			List<Team> teams = readStatusFile(inputFile);
-			out.println(SEPARATOR);
+
 			out.println("Team Name,Average By Bike");
-			dumpReport(out, generateReport(teams, AbstractParticipant::compareByBike, 
-					AbstractParticipant::getByBikeFormatted));
-			out.println(SEPARATOR);
+			List<DataPoint<Double>> teamPerBike = generateDataPoints(teams, AbstractParticipant::compareByBike, 
+					AbstractParticipant::getByBike);
+			dumpReport(out, teamPerBike, this::formatDaysByBike);
+			images.add(new ChartsGenerator().generateChartImage("Average By Bike", teamPerBike));
+
 			out.println("Member Name,Average By Bike");
-			dumpReport(out, generateReport(getAllMembers(teams), AbstractParticipant::compareByBike, 
-					AbstractParticipant::getByBikeFormatted));
-			out.println(SEPARATOR);
+			List<DataPoint<Double>> memberPerBike = generateDataPoints(getAllMembers(teams), AbstractParticipant::compareByBike, 
+					AbstractParticipant::getByBike);
+			dumpReport(out, memberPerBike, this::formatDaysByBike);
+			images.add(new ChartsGenerator().generateChartImage("Average By Bike", memberPerBike));
+
 			out.println("Team Name,Total Kilometers");
-			dumpReport(out, generateReport(teams, AbstractParticipant::compareKm, 
-					AbstractParticipant::getKmFormatted));
-			out.println(SEPARATOR);
+			List<DataPoint<Integer>> teamKm = generateDataPoints(teams, AbstractParticipant::compareKm,
+					AbstractParticipant::getKm);
+			dumpReport(out, teamKm, this::formatKm);
+			images.add(new ChartsGenerator().generateChartImage("Total Kilometers", teamKm));
+
 			out.println("Member Name,Total Kilometers");
-			dumpReport(out, generateReport(getAllMembers(teams), AbstractParticipant::compareKm, 
-					AbstractParticipant::getKmFormatted));
-			out.println(SEPARATOR);
+			List<DataPoint<Integer>> memberTotalKm = generateDataPoints(getAllMembers(teams), AbstractParticipant::compareKm, 
+					AbstractParticipant::getKm);
+			dumpReport(out, memberTotalKm, this::formatKm);
+			images.add(new ChartsGenerator().generateChartImage("Total Kilometers", memberTotalKm));
+
 			out.println("Member Name, Km per Day");
-			dumpReport(out, generateReport(getAllMembers(teams), Member::compareKmPerDay, 
-					Member::getKmPerDayFormatted));
-			return outputFile;
+			List<DataPoint<Double>> memberKmPerDay = generateDataPoints(getAllMembers(teams), Member::compareKmPerDay, 
+					Member::getKmPerDay);
+			dumpReport(out, memberKmPerDay, this::formatKmPerDay);
+			images.add(new ChartsGenerator().generateChartImage("Km Per Day", memberKmPerDay));
+			
+			BufferedImage combinedImage = new ChartsGenerator().combineImages(images);
+			ImageIO.write(combinedImage, "PNG", getGraphOutputFile(inputFile));
+
+			return reportOutputFile;
 		}
+	}
+	
+	private String formatDaysByBike(double d) {
+		return BY_BIKE_FORMAT.format(d);
+	}
+	
+	private String formatKm(int i) {
+		return BY_KM_FORMAT.format(i);
+	}
+	
+	private String formatKmPerDay(double d) {
+		return BY_KM_PER_DAY_FORMAT.format(d);
 	}
 	
 	/**
@@ -133,9 +169,20 @@ public class StatsGenerator {
 	 * @param inputFile
 	 * @return
 	 */
-	private File getOutputFile(File inputFile) {
+	private File getReportOutputFile(File inputFile) {
 		String inputName = inputFile.getName();
 		String outputName = inputName.replace(".csv", " formatted.csv");
+		return new File(inputFile.getParent(), outputName);
+	}
+	
+	/**
+	 * Generates a name for the graphs that are generated
+	 * @param inputFile
+	 * @return
+	 */
+	private File getGraphOutputFile(File inputFile) {
+		String inputName = inputFile.getName();
+		String outputName = inputName.replace(".csv", " graphs.png");
 		return new File(inputFile.getParent(), outputName);
 	}
 	
@@ -144,24 +191,25 @@ public class StatsGenerator {
 	 * @param out
 	 * @param data
 	 */
-	private void dumpReport(PrintStream out, List<Object[]> data) {
-		data.stream().forEach(row -> out.println(row[0]+","+row[1]));
+	private <T> void dumpReport(PrintStream out, List<DataPoint<T>> data, Function<T, String> formatter) {
+		out.print(SEPARATOR);
+		data.stream().forEach(row -> out.println(row.getName()+","+row.getValue()));
 	}
 
 	/**
 	 * Generates a report
 	 * @param participants
 	 * @param comparator
-	 * @param valueFunction
+	 * @param valueFormatter
 	 * @return table data
 	 */
-	private <T extends IParticipant> List<Object[]> generateReport(List<T> participants, 
-			Comparator<T> comparator,
-			Function<T, String> valueFunction) {
-		List<Object[]> data = new ArrayList<>();
+	private <P extends IParticipant, T> List<DataPoint<T>> generateDataPoints(List<P> participants, 
+			Comparator<P> comparator,
+			Function<P, T> valueFormatter) {
+		List<DataPoint<T>> data = new ArrayList<>();
 		participants.stream().
 			sorted(comparator).
-			forEach(participant -> data.add(new Object[] { participant.getName(), valueFunction.apply(participant) }));
+			forEach(participant -> data.add(new DataPoint<>(participant.getName(), valueFormatter.apply(participant))));
 		return data;
 	}
 	
