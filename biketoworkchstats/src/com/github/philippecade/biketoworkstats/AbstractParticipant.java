@@ -9,14 +9,14 @@ package com.github.philippecade.biketoworkstats;
 class AbstractParticipant implements IParticipant {
 
 	private String name;
-	private int km;
+	private double km;
 	private double byBike;
 
 	void setName(String name) {
 		this.name = name.trim();
 	}
 
-	void setKm(int km) {
+	void setKm(double km) {
 		this.km = km;
 	}
 
@@ -25,7 +25,7 @@ class AbstractParticipant implements IParticipant {
 	}
 
 	@Override
-	public int getKm() {
+	public double getKm() {
 		return this.km;
 	}
 
@@ -60,7 +60,7 @@ class AbstractParticipant implements IParticipant {
 	 * @return
 	 */
 	static int compareKm(IParticipant p1, IParticipant p2) {
-		int cmp = Integer.valueOf(p2.getKm()).compareTo(p1.getKm());
+		int cmp = Double.valueOf(p2.getKm()).compareTo(p1.getKm());
 		if (cmp != 0) {
 			return cmp;
 		}

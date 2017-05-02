@@ -10,6 +10,7 @@ import java.io.PrintStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
@@ -26,21 +27,29 @@ import javax.imageio.ImageIO;
 public class StatsGenerator {
 
 	private static final NumberFormat BY_BIKE_FORMAT = new DecimalFormat("#0.00 %");
-	private static final NumberFormat BY_KM_FORMAT = new DecimalFormat("#0");
+	private static final NumberFormat BY_KM_FORMAT = new DecimalFormat("#0.0");
 	private static final NumberFormat BY_KM_PER_DAY_FORMAT = new DecimalFormat("#0.0");
 
 	private static final String SEPARATOR = "--------";
 	private static final int TEAM_NAME_COLUMN = 5;
-	private static final int TEAM_KM = 49;
-	private static final int TEAM_PERCENT_BY_BIKE = 46;
-	private static final int MEMBER_1_EMAIL = 9;
-	private static final int MEMBER_1_KM = 30;
-	private static final int MEMBER_2_EMAIL = 19;
-	private static final int MEMBER_2_KM = 34;
-	private static final int MEMBER_3_EMAIL = 23;
-	private static final int MEMBER_3_KM = 38;
-	private static final int MEMBER_4_EMAIL = 27;
-	private static final int MEMBER_4_KM = 42;
+	private static final int TEAM_KM = 52;
+	private static final int TEAM_PERCENT_BY_BIKE = 49;
+	private static final int MEMBER_1_EMAIL = 18;
+	private static final int MEMBER_1_TOTAL_KM = 33;
+	private static final int MEMBER_1_PERCENT_BY_BIKE = 36;
+	private static final int MEMBER_1_KM_PER_DAY = 19;
+	private static final int MEMBER_2_EMAIL = 22;
+	private static final int MEMBER_2_TOTAL_KM = 37;
+	private static final int MEMBER_2_PERCENT_BY_BIKE = 40;
+	private static final int MEMBER_2_KM_PER_DAY = 23;
+	private static final int MEMBER_3_EMAIL = 26;
+	private static final int MEMBER_3_TOTAL_KM = 41;
+	private static final int MEMBER_3_PERCENT_BY_BIKE = 44;
+	private static final int MEMBER_3_KM_PER_DAY = 27;
+	private static final int MEMBER_4_EMAIL = 30;
+	private static final int MEMBER_4_TOTAL_KM = 45;
+	private static final int MEMBER_4_PERCENT_BY_BIKE = 48;
+	private static final int MEMBER_4_KM_PER_DAY = 31;
 	
 	/**
 	 * Reads the status file and returns the data model
@@ -54,19 +63,19 @@ public class StatsGenerator {
 			// skip the first header line
 			String line = reader.readLine();
 			while ((line = reader.readLine()) != null) {
-				String[] columns = line.split(";");
+				String[] columns = split(line);
 				if (columns.length < TEAM_NAME_COLUMN) {
 					continue;
 				}
 
 				Team team = new Team(columns[TEAM_NAME_COLUMN]);
-				team.setKm(Integer.parseInt(columns[TEAM_KM]));
+				team.setKm(Double.parseDouble(columns[TEAM_KM]));
 				team.setByBike(Double.parseDouble(columns[TEAM_PERCENT_BY_BIKE]));
 
-				addNonEmptyMember(team, getMember(columns, MEMBER_1_EMAIL, MEMBER_1_KM));
-				addNonEmptyMember(team, getMember(columns, MEMBER_2_EMAIL, MEMBER_2_KM));
-				addNonEmptyMember(team, getMember(columns, MEMBER_3_EMAIL, MEMBER_3_KM));
-				addNonEmptyMember(team, getMember(columns, MEMBER_4_EMAIL, MEMBER_4_KM));
+				addNonEmptyMember(team, getMember(columns, MEMBER_1_EMAIL, MEMBER_1_TOTAL_KM, MEMBER_1_PERCENT_BY_BIKE, MEMBER_1_KM_PER_DAY));
+				addNonEmptyMember(team, getMember(columns, MEMBER_2_EMAIL, MEMBER_2_TOTAL_KM, MEMBER_2_PERCENT_BY_BIKE, MEMBER_2_KM_PER_DAY));
+				addNonEmptyMember(team, getMember(columns, MEMBER_3_EMAIL, MEMBER_3_TOTAL_KM, MEMBER_3_PERCENT_BY_BIKE, MEMBER_3_KM_PER_DAY));
+				addNonEmptyMember(team, getMember(columns, MEMBER_4_EMAIL, MEMBER_4_TOTAL_KM, MEMBER_4_PERCENT_BY_BIKE, MEMBER_4_KM_PER_DAY));
 				
 				teams.add(team);
 			}
@@ -74,31 +83,51 @@ public class StatsGenerator {
 		return teams;
 	}
 	
+	private String[] split(String line) {
+		return Arrays.stream(line.split(";")).map(this::stripQuotes).toArray(String[]::new);
+	}
+	
+	private String stripQuotes(String s) {
+		String result = s;
+		if (result.startsWith("\"")) {
+			result = result.substring(1);
+		}
+		if (result.endsWith("\"")) {
+			result = result.substring(0, result.length()-1);
+		}
+		return result;
+	}
+	
 	private void addNonEmptyMember(Team team, Member member) {
 		if (!member.getEmail().isEmpty()) {
 			team.addMember(member);
 		}
-		
 	}
 	
 	/**
 	 * Returns a member
 	 * @param columns
 	 * @param emailIndex
-	 * @param kmIndex
+	 * @param totalKmIndex
+	 * @param daysPerBike
 	 * @return
 	 */
-	Member getMember(String[] columns, int emailIndex, int kmIndex) {
+	Member getMember(String[] columns, int emailIndex, int totalKmIndex, int daysPerBike, int kmPerDay) {
 		Member member = new Member();
 		member.setEmail(columns[emailIndex]);
 		member.setName(columns[emailIndex-2]+" "+columns[emailIndex-1]);
-		String km = columns[kmIndex];
+		String km = columns[totalKmIndex];
 		if (!km.isEmpty()) {
-			member.setKm(Integer.parseInt(km));
+			member.setKm(Double.parseDouble(km));
 		}
-		String byBike = columns[kmIndex+3];
+		String byBike = columns[daysPerBike];
 		if (!byBike.isEmpty()) {
 			member.setByBike(Double.parseDouble(byBike));
+		}
+		
+		String kmPerDayValue = columns[kmPerDay];
+		if (!kmPerDayValue.isEmpty()) {
+			member.setKmPerDay(Double.parseDouble(kmPerDayValue));
 		}
 		return member;
 	}
@@ -128,13 +157,13 @@ public class StatsGenerator {
 			images.add(new ChartsGenerator().generateChartImage("Average By Bike", memberPerBike));
 
 			out.println("Team Name,Total Kilometers");
-			List<DataPoint<Integer>> teamKm = generateDataPoints(teams, AbstractParticipant::compareKm,
+			List<DataPoint<Double>> teamKm = generateDataPoints(teams, AbstractParticipant::compareKm,
 					AbstractParticipant::getKm);
 			dumpReport(out, teamKm, this::formatKm);
 			images.add(new ChartsGenerator().generateChartImage("Total Kilometers", teamKm));
 
 			out.println("Member Name,Total Kilometers");
-			List<DataPoint<Integer>> memberTotalKm = generateDataPoints(getAllMembers(teams), AbstractParticipant::compareKm, 
+			List<DataPoint<Double>> memberTotalKm = generateDataPoints(getAllMembers(teams), AbstractParticipant::compareKm, 
 					AbstractParticipant::getKm);
 			dumpReport(out, memberTotalKm, this::formatKm);
 			images.add(new ChartsGenerator().generateChartImage("Total Kilometers", memberTotalKm));
@@ -156,7 +185,7 @@ public class StatsGenerator {
 		return BY_BIKE_FORMAT.format(d);
 	}
 	
-	private String formatKm(int i) {
+	private String formatKm(double i) {
 		return BY_KM_FORMAT.format(i);
 	}
 	
@@ -192,8 +221,8 @@ public class StatsGenerator {
 	 * @param data
 	 */
 	private <T> void dumpReport(PrintStream out, List<DataPoint<T>> data, Function<T, String> formatter) {
-		out.print(SEPARATOR);
-		data.stream().forEach(row -> out.println(row.getName()+","+row.getValue()));
+		out.println(SEPARATOR);
+		data.stream().forEach(row -> out.println("\""+row.getName()+"\","+row.getValue()));
 	}
 
 	/**

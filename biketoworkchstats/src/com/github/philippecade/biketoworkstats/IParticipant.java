@@ -16,7 +16,7 @@ interface IParticipant {
 	/**
 	 * @return Total number of kilometers ridden
 	 */
-	int getKm();
+	double getKm();
 
 	/**
 	 * @return Days per bike in percent (0..1)
