@@ -25,13 +25,13 @@ import org.jfree.data.category.DefaultCategoryDataset;
 public class ChartsGenerator {
 	
 	private static final Color BTW_BLUE = new Color(60, 176, 224);
-	private static final int IMAGE_WIDTH = 600;
-	private static final int IMAGE_HEIGHT = 400;
+	private static final int IMAGE_WIDTH = 800;
+	private static final int IMAGE_HEIGHT = 600;
 	private static final int NUM_CHART_COLUMNS = 2;
 
-	<T extends Number> BufferedImage generateChartImage(String title, List<DataPoint<T>> data) throws IOException {
+	<T extends Number> BufferedImage generateChartImage(String title, String unit, List<DataPoint<T>> data) throws IOException {
 		CategoryDataset dataset = createDataset(data);
-		JFreeChart chart = ChartFactory.createBarChart(title, null, "Km", dataset, PlotOrientation.VERTICAL, false, false, false);
+		JFreeChart chart = ChartFactory.createBarChart(title, null, unit, dataset, PlotOrientation.VERTICAL, false, false, false);
 		configureChart(chart);
 		return chart.createBufferedImage(IMAGE_WIDTH, IMAGE_HEIGHT);
 	}

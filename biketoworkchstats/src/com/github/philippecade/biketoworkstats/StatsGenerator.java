@@ -148,31 +148,31 @@ public class StatsGenerator {
 			List<DataPoint<Double>> teamPerBike = generateDataPoints(teams, AbstractParticipant::compareByBike, 
 					AbstractParticipant::getByBike);
 			dumpReport(out, teamPerBike, this::formatDaysByBike);
-			images.add(new ChartsGenerator().generateChartImage("Average By Bike", teamPerBike));
+			images.add(new ChartsGenerator().generateChartImage("Average By Bike", "%", teamPerBike));
 
 			out.println("Member Name,Average By Bike");
 			List<DataPoint<Double>> memberPerBike = generateDataPoints(getAllMembers(teams), AbstractParticipant::compareByBike, 
 					AbstractParticipant::getByBike);
 			dumpReport(out, memberPerBike, this::formatDaysByBike);
-			images.add(new ChartsGenerator().generateChartImage("Average By Bike", memberPerBike));
+			images.add(new ChartsGenerator().generateChartImage("Average By Bike", "%", memberPerBike));
 
 			out.println("Team Name,Total Kilometers");
 			List<DataPoint<Double>> teamKm = generateDataPoints(teams, AbstractParticipant::compareKm,
 					AbstractParticipant::getKm);
 			dumpReport(out, teamKm, this::formatKm);
-			images.add(new ChartsGenerator().generateChartImage("Total Kilometers", teamKm));
+			images.add(new ChartsGenerator().generateChartImage("Total Kilometers", "km", teamKm));
 
 			out.println("Member Name,Total Kilometers");
 			List<DataPoint<Double>> memberTotalKm = generateDataPoints(getAllMembers(teams), AbstractParticipant::compareKm, 
 					AbstractParticipant::getKm);
 			dumpReport(out, memberTotalKm, this::formatKm);
-			images.add(new ChartsGenerator().generateChartImage("Total Kilometers", memberTotalKm));
+			images.add(new ChartsGenerator().generateChartImage("Total Kilometers", "km", memberTotalKm));
 
 			out.println("Member Name, Km per Day");
 			List<DataPoint<Double>> memberKmPerDay = generateDataPoints(getAllMembers(teams), Member::compareKmPerDay, 
 					Member::getKmPerDay);
 			dumpReport(out, memberKmPerDay, this::formatKmPerDay);
-			images.add(new ChartsGenerator().generateChartImage("Km Per Day", memberKmPerDay));
+			images.add(new ChartsGenerator().generateChartImage("Km Per Day", "km", memberKmPerDay));
 			
 			BufferedImage combinedImage = new ChartsGenerator().combineImages(images);
 			ImageIO.write(combinedImage, "PNG", getGraphOutputFile(inputFile));
