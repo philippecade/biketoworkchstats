@@ -7,4 +7,4 @@ deploy:
   file: biketoworkchstats/target/biketoworkchstats*
   skip_cleanup: true
   on:
-    repo: philippecade/biketoworkchstats
+    tags: true
