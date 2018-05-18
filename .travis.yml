@@ -1,0 +1,13 @@
+language: java
+script: cd biketoworkchstats && mvn test
+deploy:
+  provider: releases
+  api_key: $GITHUB_OAUTH_TOKEN
+  file_glob: true
+  file: biketoworkchstats/target/biketoworkchstats*
+  skip_cleanup: true
+  on:
+    tags: true
+env:
+  global:
+    secure: xdmWsuMjJ6LvpTc+l2Kf0FXpTwKYLH/OIi1nLiqmNP1o1UpMwp2p8y2ffXSG7nHy7njrRCKzx8KFlpKX9g8vyOyerz58RxAwZk0KSRge2iO57tkO+VN0FtggiMhkXSqrzRyEyBO035Il2LaNtoEQJ2/3Fv8Mll49siKTEPI2g1X07Ff1/zRHvu7wRPt7mxa3HbjDU6pfThsbrAYroAWGovinog7ApK6hbYO6b+kK6X0j49M6lh1hTgWwkrgv6zO07T8YYtw7EVyDSMfaZ7ovUEJ96PcA/DlHBfmLMPG8NSZDBbHAUKxoRudztxQ1/aot4iFCbiL8zpKe6k8VTgW74x4ji48ccWtmvC0QN3Wh5gYRcWbCid5LZXIH2opVZEOdhM9zTnbRJVwiZBt9yk/JggNXq1Lo0BeiPpNq8USkt3SElGNSZyBaJ8h7pResVfhDrlMH3NkmeaXJ5EJsQxmZYI68/rsLYO6cD4U1bampXEw3K8ImgMEcr2QB0QgBr8556EA8Ygfpvi3NVT2EmFIc1hvnqfZRoCaWC4wfs0Us/3BWPBshSO8wZTXOMAFrlOweDsFNNOmMlvOBlL5sjji6y0Jr7KeMdAsTQKwzUl+PF14SWGUuWaW1cHu2Z9P6MxLvPXC6NmPr3nKZn7J38PrM5t5iIWVaHb/3uwkf/33d13U=
