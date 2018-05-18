@@ -7,8 +7,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -25,10 +23,6 @@ import javax.imageio.ImageIO;
  * @since May 4, 2016
  */
 public class StatsGenerator {
-
-	private static final NumberFormat BY_BIKE_FORMAT = new DecimalFormat("#0.00 %");
-	private static final NumberFormat BY_KM_FORMAT = new DecimalFormat("#0.0");
-	private static final NumberFormat BY_KM_PER_DAY_FORMAT = new DecimalFormat("#0.0");
 
 	private static final String SEPARATOR = "--------";
 	private static final int TEAM_NAME_COLUMN = 5;
@@ -147,31 +141,31 @@ public class StatsGenerator {
 			out.println("Team Name,Average By Bike");
 			List<DataPoint<Double>> teamPerBike = generateDataPoints(teams, AbstractParticipant::compareByBike, 
 					AbstractParticipant::getByBike);
-			dumpReport(out, teamPerBike, this::formatDaysByBike);
+			dumpReport(out, teamPerBike);
 			images.add(new ChartsGenerator().generateChartImage("Average By Bike", "%", teamPerBike));
 
 			out.println("Member Name,Average By Bike");
 			List<DataPoint<Double>> memberPerBike = generateDataPoints(getAllMembers(teams), AbstractParticipant::compareByBike, 
 					AbstractParticipant::getByBike);
-			dumpReport(out, memberPerBike, this::formatDaysByBike);
+			dumpReport(out, memberPerBike);
 			images.add(new ChartsGenerator().generateChartImage("Average By Bike", "%", memberPerBike));
 
 			out.println("Team Name,Total Kilometers");
 			List<DataPoint<Double>> teamKm = generateDataPoints(teams, AbstractParticipant::compareKm,
 					AbstractParticipant::getKm);
-			dumpReport(out, teamKm, this::formatKm);
+			dumpReport(out, teamKm);
 			images.add(new ChartsGenerator().generateChartImage("Total Kilometers", "km", teamKm));
 
 			out.println("Member Name,Total Kilometers");
 			List<DataPoint<Double>> memberTotalKm = generateDataPoints(getAllMembers(teams), AbstractParticipant::compareKm, 
 					AbstractParticipant::getKm);
-			dumpReport(out, memberTotalKm, this::formatKm);
+			dumpReport(out, memberTotalKm);
 			images.add(new ChartsGenerator().generateChartImage("Total Kilometers", "km", memberTotalKm));
 
 			out.println("Member Name, Km per Day");
 			List<DataPoint<Double>> memberKmPerDay = generateDataPoints(getAllMembers(teams), Member::compareKmPerDay, 
 					Member::getKmPerDay);
-			dumpReport(out, memberKmPerDay, this::formatKmPerDay);
+			dumpReport(out, memberKmPerDay);
 			images.add(new ChartsGenerator().generateChartImage("Km Per Day", "km", memberKmPerDay));
 			
 			BufferedImage combinedImage = new ChartsGenerator().combineImages(images);
@@ -179,18 +173,6 @@ public class StatsGenerator {
 
 			return reportOutputFile;
 		}
-	}
-	
-	private String formatDaysByBike(double d) {
-		return BY_BIKE_FORMAT.format(d);
-	}
-	
-	private String formatKm(double i) {
-		return BY_KM_FORMAT.format(i);
-	}
-	
-	private String formatKmPerDay(double d) {
-		return BY_KM_PER_DAY_FORMAT.format(d);
 	}
 	
 	/**
@@ -220,7 +202,7 @@ public class StatsGenerator {
 	 * @param out
 	 * @param data
 	 */
-	private <T> void dumpReport(PrintStream out, List<DataPoint<T>> data, Function<T, String> formatter) {
+	private <T> void dumpReport(PrintStream out, List<DataPoint<T>> data) {
 		out.println(SEPARATOR);
 		data.stream().forEach(row -> out.println("\""+row.getName()+"\","+row.getValue()));
 	}

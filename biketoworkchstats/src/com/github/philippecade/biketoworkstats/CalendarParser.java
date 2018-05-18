@@ -63,11 +63,6 @@ class CalendarParser {
 		
 	}
 
-	@FunctionalInterface
-	private interface IMemberFoundListener {
-		void memberFound(MemberActivity event);
-	}
-	
 	CalendarParser(String url) {
 		this.url = url;
 	}
@@ -90,7 +85,7 @@ class CalendarParser {
 			return;
 		}
 		idx += "a href=\"".length();
-		String redirectUrl = calendarPage.substring(idx, calendarPage.indexOf("\"", idx));
+		String redirectUrl = calendarPage.substring(idx, calendarPage.indexOf('"', idx));
 		calendarPage = getCalendarPage(redirectUrl);
 		
 		int startIdx = 0;
@@ -99,7 +94,7 @@ class CalendarParser {
 			if (startIdx == -1) {
 				break;
 			}
-			int endIdx = calendarPage.indexOf(";", startIdx);
+			int endIdx = calendarPage.indexOf(';', startIdx);
 			String jsonString = calendarPage.substring(startIdx, endIdx);
 			processJsonData(jsonString);
 			startIdx = endIdx;
@@ -107,29 +102,30 @@ class CalendarParser {
 	}
 	
 	private void processJsonData(String jsonString) {
-		JsonReader reader = Json.createReader(new StringReader(jsonString.substring(jsonString.indexOf('=')+1)));
-		JsonObject jsonObject = reader.readObject();
-		int memberId = Integer.parseInt(jsonObject.getString("memberID"));
-		double kmPerDay = Double.parseDouble(jsonObject.getString("kmProTag"));
-		String year = jsonObject.getString("activityYear");
+		try (JsonReader reader = Json.createReader(new StringReader(jsonString.substring(jsonString.indexOf('=')+1)))) {
+			JsonObject jsonObject = reader.readObject();
+			int memberId = Integer.parseInt(jsonObject.getString("memberID"));
+			double kmPerDay = Double.parseDouble(jsonObject.getString("kmProTag"));
+			String year = jsonObject.getString("activityYear");
 
-		JsonObject daysObject = jsonObject.getJsonObject("days");
+			JsonObject daysObject = jsonObject.getJsonObject("days");
 
-		List<Date> bikeDays = new ArrayList<>();
-		if (daysObject != null) {
-			daysObject.forEach((key, value) -> {
-				boolean byBike = 1 == Integer.parseInt(((JsonObject)value).getString("status"));
-				if (byBike) {
-					try {
-						Date parse = new SimpleDateFormat("yyyyMMdd").parse(year+key);
-						bikeDays.add(parse);
-					} catch (Exception e) {
-						// ignore if it can't be parsed
+			List<Date> bikeDays = new ArrayList<>();
+			if (daysObject != null) {
+				daysObject.forEach((key, value) -> {
+					boolean byBike = 1 == Integer.parseInt(((JsonObject)value).getString("status"));
+					if (byBike) {
+						try {
+							Date parse = new SimpleDateFormat("yyyyMMdd").parse(year+key);
+							bikeDays.add(parse);
+						} catch (Exception e) {
+							// ignore if it can't be parsed
+						}
 					}
-				}
-			});
+				});
+			}
+			propagateMemberActivity(new MemberActivity(memberId, kmPerDay, bikeDays));
 		}
-		propagateMemberActivity(new MemberActivity(memberId, kmPerDay, bikeDays));
 	}
 	
 	private String getCalendarPage(String url) throws IOException {
