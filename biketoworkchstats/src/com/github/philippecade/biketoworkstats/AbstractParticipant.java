@@ -9,29 +9,28 @@ package com.github.philippecade.biketoworkstats;
 class AbstractParticipant implements IParticipant {
 
 	private String name;
-	private double km;
-	private double byBike;
+	private ParticipantData data = new ParticipantData();
 
 	void setName(String name) {
 		this.name = name.trim();
 	}
 
 	void setKm(double km) {
-		this.km = km;
+		this.data.setKm(km);
 	}
 
 	void setByBike(double byBike) {
-		this.byBike = byBike;
+		this.data.setByBike(byBike);
 	}
 
 	@Override
 	public double getKm() {
-		return this.km;
+		return this.data.getKm();
 	}
 
 	@Override
 	public double getByBike() {
-		return this.byBike;
+		return this.data.getByBike();
 	}
 
 	@Override

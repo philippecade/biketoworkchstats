@@ -12,10 +12,16 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.Plot;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.category.BarRenderer;
+import org.jfree.chart.renderer.category.CategoryItemRenderer;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 /**
  * Generates some charts
@@ -28,9 +34,30 @@ public class ChartsGenerator {
 	private static final int IMAGE_HEIGHT = 600;
 	private static final int NUM_CHART_COLUMNS = 2;
 
-	<T extends Number> BufferedImage generateChartImage(String title, String unit, List<DataPoint<T>> data) {
-		CategoryDataset dataset = createDataset(data);
+	/**
+	 * Generates a bar chart with the given data
+	 * @param title
+	 * @param unit
+	 * @param data
+	 * @return
+	 */
+	<T extends Number> BufferedImage generateBarChartImage(String title, String unit, List<DataPoint<T>> data) {
+		CategoryDataset dataset = createBarDataset(data);
 		JFreeChart chart = ChartFactory.createBarChart(title, null, unit, dataset, PlotOrientation.VERTICAL, false, false, false);
+		configureChart(chart);
+		return chart.createBufferedImage(IMAGE_WIDTH, IMAGE_HEIGHT);
+	}
+	
+	/**
+	 * Generates a line chart with the given data
+	 * @param title
+	 * @param unit
+	 * @param data
+	 * @return
+	 */
+	<T extends Number> BufferedImage generateLinesChartImage(String title, String unit, List<DataPoint<List<T>>> data) {
+		XYSeriesCollection dataset = createLinesDataSet(data);
+		JFreeChart chart = ChartFactory.createXYLineChart(title, "weeks", unit, dataset);
 		configureChart(chart);
 		return chart.createBufferedImage(IMAGE_WIDTH, IMAGE_HEIGHT);
 	}
@@ -45,15 +72,25 @@ public class ChartsGenerator {
 	/**
 	 * Configures chart properties
 	 * @param chart Chart to configure
-	 * @return plot area to draw the chart in
 	 */
 	private void configureChart(JFreeChart chart) {
 		chart.setBackgroundPaint(BTW_BLUE);
-		CategoryPlot plot = chart.getCategoryPlot();
+		Plot plot = chart.getPlot();
 		plot.setBackgroundAlpha(0.0f);
-		((BarRenderer)plot.getRenderer()).setSeriesPaint(0, Color.WHITE.darker());
-		CategoryAxis domainAxis = plot.getDomainAxis();
-		domainAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
+		if (plot instanceof CategoryPlot) {
+			CategoryPlot categoryPlot = (CategoryPlot) plot;
+			CategoryItemRenderer renderer = categoryPlot.getRenderer();
+			if (renderer instanceof BarRenderer) {
+				((BarRenderer)renderer).setSeriesPaint(0, Color.WHITE.darker());
+			}
+			CategoryAxis domainAxis = categoryPlot.getDomainAxis();
+			domainAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
+		}
+		else if (plot instanceof XYPlot) {
+			XYPlot xyPlot = (XYPlot) plot;
+			XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) xyPlot.getRenderer();
+			renderer.setBaseShapesVisible(true);
+		}
 	}
 	
 	/**
@@ -88,9 +125,23 @@ public class ChartsGenerator {
 		return new BufferedImage(imageSize.width, imageSize.height, BufferedImage.TYPE_INT_RGB);
 	}
 	
-	<T extends Number> CategoryDataset createDataset(List<DataPoint<T>> data) {
+	<T extends Number> CategoryDataset createBarDataset(List<DataPoint<T>> data) {
 		DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 		data.forEach(row -> dataset.addValue(row.getValue(), "Row", row.getName()));
+		return dataset;
+	}
+	
+	<T extends Number> XYSeriesCollection createLinesDataSet(List<DataPoint<List<T>>> series) {
+		XYSeriesCollection dataset = new XYSeriesCollection();
+		for (DataPoint<List<T>> serie: series) {
+			XYSeries xySeries = new XYSeries(serie.getName());
+			Integer x = 1;
+			for(T value : serie.getValue()) {
+				xySeries.add(x, value);
+				x += 1;
+			}
+			dataset.addSeries(xySeries);
+		}
 		return dataset;
 	}
 	

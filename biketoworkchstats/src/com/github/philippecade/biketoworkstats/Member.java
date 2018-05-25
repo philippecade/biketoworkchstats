@@ -6,7 +6,7 @@ package com.github.philippecade.biketoworkstats;
  * @author  xphc
  * @since May 4, 2016
  ****************************************************************************/
-class Member extends AbstractParticipant implements IParticipant {
+class Member extends AbstractParticipant {
 	
 	private String email;
 	private double kmPerDay;

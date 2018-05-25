@@ -1,14 +1,11 @@
 package com.github.philippecade.biketoworkstats;
 
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
@@ -25,107 +22,7 @@ import javax.imageio.ImageIO;
 public class StatsGenerator {
 
 	private static final String SEPARATOR = "--------";
-	private static final int TEAM_NAME_COLUMN = 5;
-	private static final int TEAM_KM = 52;
-	private static final int TEAM_PERCENT_BY_BIKE = 49;
-	private static final int MEMBER_1_EMAIL = 18;
-	private static final int MEMBER_1_TOTAL_KM = 33;
-	private static final int MEMBER_1_PERCENT_BY_BIKE = 36;
-	private static final int MEMBER_1_KM_PER_DAY = 19;
-	private static final int MEMBER_2_EMAIL = 22;
-	private static final int MEMBER_2_TOTAL_KM = 37;
-	private static final int MEMBER_2_PERCENT_BY_BIKE = 40;
-	private static final int MEMBER_2_KM_PER_DAY = 23;
-	private static final int MEMBER_3_EMAIL = 26;
-	private static final int MEMBER_3_TOTAL_KM = 41;
-	private static final int MEMBER_3_PERCENT_BY_BIKE = 44;
-	private static final int MEMBER_3_KM_PER_DAY = 27;
-	private static final int MEMBER_4_EMAIL = 30;
-	private static final int MEMBER_4_TOTAL_KM = 45;
-	private static final int MEMBER_4_PERCENT_BY_BIKE = 48;
-	private static final int MEMBER_4_KM_PER_DAY = 31;
-	
-	/**
-	 * Reads the status file and returns the data model
-	 * @param file
-	 * @return
-	 * @throws IOException
-	 */
-	List<Team> readStatusFile(File file) throws IOException {
-		List<Team> teams = new ArrayList<>();
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
-			// skip the first header line
-			String line = reader.readLine();
-			while ((line = reader.readLine()) != null) {
-				String[] columns = split(line);
-				if (columns.length < TEAM_NAME_COLUMN) {
-					continue;
-				}
 
-				Team team = new Team(columns[TEAM_NAME_COLUMN]);
-				team.setKm(Double.parseDouble(columns[TEAM_KM]));
-				team.setByBike(Double.parseDouble(columns[TEAM_PERCENT_BY_BIKE]));
-
-				addNonEmptyMember(team, getMember(columns, MEMBER_1_EMAIL, MEMBER_1_TOTAL_KM, MEMBER_1_PERCENT_BY_BIKE, MEMBER_1_KM_PER_DAY));
-				addNonEmptyMember(team, getMember(columns, MEMBER_2_EMAIL, MEMBER_2_TOTAL_KM, MEMBER_2_PERCENT_BY_BIKE, MEMBER_2_KM_PER_DAY));
-				addNonEmptyMember(team, getMember(columns, MEMBER_3_EMAIL, MEMBER_3_TOTAL_KM, MEMBER_3_PERCENT_BY_BIKE, MEMBER_3_KM_PER_DAY));
-				addNonEmptyMember(team, getMember(columns, MEMBER_4_EMAIL, MEMBER_4_TOTAL_KM, MEMBER_4_PERCENT_BY_BIKE, MEMBER_4_KM_PER_DAY));
-				
-				teams.add(team);
-			}
-		}
-		return teams;
-	}
-	
-	private String[] split(String line) {
-		return Arrays.stream(line.split(";")).map(this::stripQuotes).toArray(String[]::new);
-	}
-	
-	private String stripQuotes(String s) {
-		String result = s;
-		if (result.startsWith("\"")) {
-			result = result.substring(1);
-		}
-		if (result.endsWith("\"")) {
-			result = result.substring(0, result.length()-1);
-		}
-		return result;
-	}
-	
-	private void addNonEmptyMember(Team team, Member member) {
-		if (!member.getEmail().isEmpty()) {
-			team.addMember(member);
-		}
-	}
-	
-	/**
-	 * Returns a member
-	 * @param columns
-	 * @param emailIndex
-	 * @param totalKmIndex
-	 * @param daysPerBike
-	 * @return
-	 */
-	Member getMember(String[] columns, int emailIndex, int totalKmIndex, int daysPerBike, int kmPerDay) {
-		Member member = new Member();
-		member.setEmail(columns[emailIndex]);
-		member.setName(columns[emailIndex-2]+" "+columns[emailIndex-1]);
-		String km = columns[totalKmIndex];
-		if (!km.isEmpty()) {
-			member.setKm(Double.parseDouble(km));
-		}
-		String byBike = columns[daysPerBike];
-		if (!byBike.isEmpty()) {
-			member.setByBike(Double.parseDouble(byBike));
-		}
-		
-		String kmPerDayValue = columns[kmPerDay];
-		if (!kmPerDayValue.isEmpty()) {
-			member.setKmPerDay(Double.parseDouble(kmPerDayValue));
-		}
-		return member;
-	}
-	
 	/**
 	 * Generates the reports for a given week number
 	 * @param inputFile
@@ -136,43 +33,62 @@ public class StatsGenerator {
 		File reportOutputFile = getReportOutputFile(inputFile);
 		List<BufferedImage> images = new ArrayList<>();
 		try (PrintStream out = new PrintStream(reportOutputFile)) {
-			List<Team> teams = readStatusFile(inputFile);
+			StatsReader statsReader = new StatsReader();
+			List<Team> teams = statsReader.readStatusFile(inputFile);
 
 			out.println("Team Name,Average By Bike");
 			List<DataPoint<Double>> teamPerBike = generateDataPoints(teams, AbstractParticipant::compareByBike, 
 					AbstractParticipant::getByBike);
 			dumpReport(out, teamPerBike);
-			images.add(new ChartsGenerator().generateChartImage("Average By Bike", "%", teamPerBike));
+			images.add(new ChartsGenerator().generateBarChartImage("Average By Bike", "%", teamPerBike));
 
 			out.println("Member Name,Average By Bike");
 			List<DataPoint<Double>> memberPerBike = generateDataPoints(getAllMembers(teams), AbstractParticipant::compareByBike, 
 					AbstractParticipant::getByBike);
 			dumpReport(out, memberPerBike);
-			images.add(new ChartsGenerator().generateChartImage("Average By Bike", "%", memberPerBike));
+			images.add(new ChartsGenerator().generateBarChartImage("Average By Bike", "%", memberPerBike));
 
 			out.println("Team Name,Total Kilometers");
 			List<DataPoint<Double>> teamKm = generateDataPoints(teams, AbstractParticipant::compareKm,
 					AbstractParticipant::getKm);
 			dumpReport(out, teamKm);
-			images.add(new ChartsGenerator().generateChartImage("Total Kilometers", "km", teamKm));
+			images.add(new ChartsGenerator().generateBarChartImage("Total Kilometers", "km", teamKm));
 
 			out.println("Member Name,Total Kilometers");
 			List<DataPoint<Double>> memberTotalKm = generateDataPoints(getAllMembers(teams), AbstractParticipant::compareKm, 
 					AbstractParticipant::getKm);
 			dumpReport(out, memberTotalKm);
-			images.add(new ChartsGenerator().generateChartImage("Total Kilometers", "km", memberTotalKm));
+			images.add(new ChartsGenerator().generateBarChartImage("Total Kilometers", "km", memberTotalKm));
 
 			out.println("Member Name, Km per Day");
 			List<DataPoint<Double>> memberKmPerDay = generateDataPoints(getAllMembers(teams), Member::compareKmPerDay, 
 					Member::getKmPerDay);
 			dumpReport(out, memberKmPerDay);
-			images.add(new ChartsGenerator().generateChartImage("Km Per Day", "km", memberKmPerDay));
+			images.add(new ChartsGenerator().generateBarChartImage("Km Per Day", "km", memberKmPerDay));
 			
 			BufferedImage combinedImage = new ChartsGenerator().combineImages(images);
 			ImageIO.write(combinedImage, "PNG", getGraphOutputFile(inputFile));
 
 			return reportOutputFile;
 		}
+	}
+	
+	/**
+	 * Generates line graphs showing the history for teams and members
+	 * @param files
+	 * @throws IOException
+	 */
+	public void generateHistoricalReports(File...files) throws IOException {
+		StatsReader statsReader = new StatsReader();
+		List<HistorizedTeam> historizedTeams = statsReader.readStatusFiles(files);
+		// one chart for teams
+		List<DataPoint<List<Double>>> teamData = generateHistoricalTeamDataPoints(historizedTeams);
+		BufferedImage teamImage = new ChartsGenerator().generateLinesChartImage("Teams Progression", "km", teamData);
+		ImageIO.write(teamImage, "PNG", new File(files[0].getParent(), "teams history.png"));
+		// one chart for people
+		List<DataPoint<List<Double>>> memberData = generateHistoricalMembersDataPoints(historizedTeams);
+		BufferedImage peopleImage = new ChartsGenerator().generateLinesChartImage("People Progression", "km", memberData);
+		ImageIO.write(peopleImage, "PNG", new File(files[0].getParent(), "people history.png"));
 	}
 	
 	/**
@@ -224,6 +140,30 @@ public class StatsGenerator {
 		return data;
 	}
 	
+	private List<DataPoint<List<Double>>> generateHistoricalTeamDataPoints(List<HistorizedTeam> teams) {
+		List<DataPoint<List<Double>>> data = new ArrayList<>();
+		for (HistorizedTeam team: teams) {
+			List<HistoricalData> historicalData = team.getData();
+			Collections.sort(historicalData, (d1, d2) -> d1.getTimestamp().compareTo(d2.getTimestamp()));
+			List<Double> values = historicalData.stream().map(HistoricalData::getKm).collect(Collectors.toList());
+			data.add(new DataPoint<>(team.getName(), values));
+		}
+		return data;
+	}
+	
+	private List<DataPoint<List<Double>>> generateHistoricalMembersDataPoints(List<HistorizedTeam> teams) {
+		List<DataPoint<List<Double>>> data = new ArrayList<>();
+		for (HistorizedTeam team: teams) {
+			for (HistorizedMember member: team.getMembers()) {
+				List<HistoricalData> historicalData = member.getData();
+				Collections.sort(historicalData, (d1, d2) -> d1.getTimestamp().compareTo(d2.getTimestamp()));
+				List<Double> values = historicalData.stream().map(HistoricalData::getKm).collect(Collectors.toList());
+				data.add(new DataPoint<>(member.getName(), values));
+			}
+		}
+		return data;
+	}
+
 	/**
 	 * Returns members of all teams
 	 * @param teams
