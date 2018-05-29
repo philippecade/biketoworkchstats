@@ -5,7 +5,6 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.List;
 
 import org.jfree.chart.ChartFactory;
@@ -29,7 +28,7 @@ public class ChartsGenerator {
 	private static final int IMAGE_HEIGHT = 600;
 	private static final int NUM_CHART_COLUMNS = 2;
 
-	<T extends Number> BufferedImage generateChartImage(String title, String unit, List<DataPoint<T>> data) throws IOException {
+	<T extends Number> BufferedImage generateChartImage(String title, String unit, List<DataPoint<T>> data) {
 		CategoryDataset dataset = createDataset(data);
 		JFreeChart chart = ChartFactory.createBarChart(title, null, unit, dataset, PlotOrientation.VERTICAL, false, false, false);
 		configureChart(chart);
