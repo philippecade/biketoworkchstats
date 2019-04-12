@@ -182,8 +182,8 @@ class StatsReader {
 	
 	private Date parseTimestamp(String timestamp) {
 		try {
-			// Example: Fri May 18 2018 09:28:53 GMT+0200 (W. Europe Daylight Time)
-			SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM d yyyy HH:mm:ss");
+			// Example: 2019-04-12T13:52:20.186Z
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
 			// Note: skips time time zone
 			return dateFormat.parse(timestamp);
 		} catch (ParseException e) {
