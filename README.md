@@ -13,6 +13,7 @@ Go to the [latest release](../../releases/latest) page to download a self execut
 - Load the CSV file(s) in this tool
 - You will get:
   - a CSV file that shows a few statistics
+  - a text file with Confluence Wiki markup with statistics
   - some graphics
 
 Statistics include:
