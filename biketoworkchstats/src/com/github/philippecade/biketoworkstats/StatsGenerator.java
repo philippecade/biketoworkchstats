@@ -3,8 +3,8 @@ package com.github.philippecade.biketoworkstats;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -12,6 +12,19 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
+
+import com.github.philippecade.biketoworkstats.model.AbstractParticipant;
+import com.github.philippecade.biketoworkstats.model.DataPoint;
+import com.github.philippecade.biketoworkstats.model.HistoricalData;
+import com.github.philippecade.biketoworkstats.model.HistorizedMember;
+import com.github.philippecade.biketoworkstats.model.HistorizedTeam;
+import com.github.philippecade.biketoworkstats.model.IParticipant;
+import com.github.philippecade.biketoworkstats.model.Member;
+import com.github.philippecade.biketoworkstats.model.Team;
+import com.github.philippecade.biketoworkstats.report.ConfluenceWikiGenerator;
+import com.github.philippecade.biketoworkstats.report.CsvReportGenerator;
+import com.github.philippecade.biketoworkstats.report.IReportGenerator;
+import com.github.philippecade.biketoworkstats.report.MultiReportGenerator;
 
 /**
  * Extracts data from the bike to work status file
@@ -21,55 +34,48 @@ import javax.imageio.ImageIO;
  */
 public class StatsGenerator {
 
-	private static final String SEPARATOR = "--------";
-
 	/**
 	 * Generates the reports for a given week number
 	 * @param inputFile
 	 * @return Result file
 	 * @throws IOException 
 	 */
-	public File generateReports(File inputFile) throws IOException {
-		File reportOutputFile = getReportOutputFile(inputFile);
+	public List<File> generateReports(File inputFile) throws IOException {
 		List<BufferedImage> images = new ArrayList<>();
-		try (PrintStream out = new PrintStream(reportOutputFile)) {
+		try (IReportGenerator reportGenerator = new MultiReportGenerator(new CsvReportGenerator(inputFile),
+				new ConfluenceWikiGenerator(inputFile))) {
 			StatsReader statsReader = new StatsReader();
 			List<Team> teams = statsReader.readStatusFile(inputFile);
 
-			out.println("Team Name,Average By Bike");
 			List<DataPoint<Double>> teamPerBike = generateDataPoints(teams, AbstractParticipant::compareByBike, 
 					AbstractParticipant::getByBike);
-			dumpReport(out, teamPerBike);
+			reportGenerator.addTable(Arrays.asList("Team Name", "Average By Bike"), teamPerBike);
 			images.add(new ChartsGenerator().generateBarChartImage("Average By Bike", "%", teamPerBike));
 
-			out.println("Member Name,Average By Bike");
 			List<DataPoint<Double>> memberPerBike = generateDataPoints(getAllMembers(teams), AbstractParticipant::compareByBike, 
 					AbstractParticipant::getByBike);
-			dumpReport(out, memberPerBike);
+			reportGenerator.addTable(Arrays.asList("Member Name", "Average By Bike"), memberPerBike);
 			images.add(new ChartsGenerator().generateBarChartImage("Average By Bike", "%", memberPerBike));
 
-			out.println("Team Name,Total Kilometers");
 			List<DataPoint<Double>> teamKm = generateDataPoints(teams, AbstractParticipant::compareKm,
 					AbstractParticipant::getKm);
-			dumpReport(out, teamKm);
+			reportGenerator.addTable(Arrays.asList("Team Name", "Total Kilometers"), teamKm);
 			images.add(new ChartsGenerator().generateBarChartImage("Total Kilometers", "km", teamKm));
 
-			out.println("Member Name,Total Kilometers");
 			List<DataPoint<Double>> memberTotalKm = generateDataPoints(getAllMembers(teams), AbstractParticipant::compareKm, 
 					AbstractParticipant::getKm);
-			dumpReport(out, memberTotalKm);
+			reportGenerator.addTable(Arrays.asList("Member Name", "Total Kilometers"), memberTotalKm);
 			images.add(new ChartsGenerator().generateBarChartImage("Total Kilometers", "km", memberTotalKm));
 
-			out.println("Member Name, Km per Day");
 			List<DataPoint<Double>> memberKmPerDay = generateDataPoints(getAllMembers(teams), Member::compareKmPerDay, 
 					Member::getKmPerDay);
-			dumpReport(out, memberKmPerDay);
+			reportGenerator.addTable(Arrays.asList("Member Name", "Km per Day"), memberKmPerDay);
 			images.add(new ChartsGenerator().generateBarChartImage("Km Per Day", "km", memberKmPerDay));
 			
 			BufferedImage combinedImage = new ChartsGenerator().combineImages(images);
 			ImageIO.write(combinedImage, "PNG", getGraphOutputFile(inputFile));
 
-			return reportOutputFile;
+			return reportGenerator.getOutputFiles();
 		}
 	}
 	
@@ -92,17 +98,6 @@ public class StatsGenerator {
 	}
 	
 	/**
-	 * Generates a name for the output file from the input file
-	 * @param inputFile
-	 * @return
-	 */
-	private File getReportOutputFile(File inputFile) {
-		String inputName = inputFile.getName();
-		String outputName = inputName.replace(".csv", " formatted.csv");
-		return new File(inputFile.getParent(), outputName);
-	}
-	
-	/**
 	 * Generates a name for the graphs that are generated
 	 * @param inputFile
 	 * @return
@@ -113,16 +108,6 @@ public class StatsGenerator {
 		return new File(inputFile.getParent(), outputName);
 	}
 	
-	/**
-	 * Writes the data to the given stream
-	 * @param out
-	 * @param data
-	 */
-	private <T> void dumpReport(PrintStream out, List<DataPoint<T>> data) {
-		out.println(SEPARATOR);
-		data.stream().forEach(row -> out.println("\""+row.getName()+"\","+row.getValue()));
-	}
-
 	/**
 	 * Generates a report
 	 * @param participants

@@ -23,6 +23,8 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
+import com.github.philippecade.biketoworkstats.model.DataPoint;
+
 /**
  * Generates some charts
  * @author xphc

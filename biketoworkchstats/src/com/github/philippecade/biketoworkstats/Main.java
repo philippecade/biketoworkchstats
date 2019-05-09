@@ -9,6 +9,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
@@ -28,14 +31,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  * @author xphc
  */
 public class Main {
-	private File[] outputFiles;
+	private List<File> outputFiles;
 	private JLabel statusLabel;
 	private JButton openButton;
 	private JProgressBar progressBar;
 
 	private static final String PROP_FILE_NAME = System.getProperty("user.home") + "/.btwstats.txt";
 	private static final String LAST_FOLDER_PROP = "lastFolder";
-	private SwingWorker<File[], Void> worker;
 	private JButton chooseFileButton;
 
 	Main() {
@@ -74,8 +76,8 @@ public class Main {
 		this.openButton.setEnabled(false);
 		this.openButton.addActionListener(event -> {
 			try {
-				if (this.outputFiles.length > 0) {
-					Desktop.getDesktop().open(this.outputFiles[0].getParentFile());
+				if (!this.outputFiles.isEmpty()) {
+					Desktop.getDesktop().open(this.outputFiles.get(0).getParentFile());
 				}
 			} catch (Exception e) {
 				showMessage(e);
@@ -94,17 +96,17 @@ public class Main {
 
 		this.chooseFileButton.setEnabled(false);
 		showMessage("Processing...");
-		this.worker = new SwingWorker<File[], Void>() {
+		SwingWorker<List<File>, Void> worker = new SwingWorker<List<File>, Void>() {
 			@Override
-			protected File[] doInBackground() throws Exception {
+			protected List<File> doInBackground() throws Exception {
 				StatsGenerator statsGenerator = new StatsGenerator();
 				File[] selectedFiles = fileChooser.getSelectedFiles();
 				if (selectedFiles.length == 0) {
-					return new File[0];
+					return Collections.emptyList();
 				}
-				File[] resultFiles = new File[selectedFiles.length];
+				List<File> resultFiles = new ArrayList<>();
 				for (int i = 0; i < selectedFiles.length; i++) {
-					resultFiles[i] = statsGenerator.generateReports(selectedFiles[i]);
+					resultFiles.addAll(statsGenerator.generateReports(selectedFiles[i]));
 					setProgress((i+1) * 100 / selectedFiles.length);
 				}
 				statsGenerator.generateHistoricalReports(selectedFiles);
@@ -112,15 +114,15 @@ public class Main {
 				return resultFiles;
 			}
 		};
-		this.worker.addPropertyChangeListener(l -> {
+		worker.addPropertyChangeListener(l -> {
 			if ("progress".equals(l.getPropertyName())) {
 				this.progressBar.setValue((int) l.getNewValue());
 			} else if ("state".equals(l.getPropertyName()) && SwingWorker.StateValue.DONE.equals(l.getNewValue())) {
 				try {
-					this.outputFiles = this.worker.get();
-					if (this.outputFiles.length > 0) {
+					this.outputFiles = worker.get();
+					if (!this.outputFiles.isEmpty()) {
 						this.openButton.setEnabled(true);
-						showMessage("Output stored to: " + this.outputFiles[0].getParent());
+						showMessage("Output stored to: " + this.outputFiles.get(0).getParent());
 					}
 					this.progressBar.setValue(0);
 					this.chooseFileButton.setEnabled(true);
@@ -129,7 +131,7 @@ public class Main {
 				}
 			}
 		});
-		this.worker.execute();
+		worker.execute();
 	}
 
 	private Component buildCenterComponent() {
