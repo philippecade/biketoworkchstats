@@ -143,7 +143,11 @@ public class StatsGenerator {
 				List<HistoricalData> historicalData = member.getData();
 				Collections.sort(historicalData, (d1, d2) -> d1.getTimestamp().compareTo(d2.getTimestamp()));
 				List<Double> values = historicalData.stream().map(HistoricalData::getKm).collect(Collectors.toList());
-				data.add(new DataPoint<>(member.getName(), values));
+				StringBuilder dataPointName = new StringBuilder(member.getName());
+				dataPointName.append(" (");
+				dataPointName.append(member.getEmail());
+				dataPointName.append(")");
+				data.add(new DataPoint<>(dataPointName.toString(), values));
 			}
 		}
 		return data;

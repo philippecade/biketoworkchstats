@@ -13,7 +13,7 @@ public class HistorizedMember extends AbstractHistorizedParticipant {
 		this.email = email;
 	}
 	
-	String getEmail() {
+	public String getEmail() {
 		return this.email;
 	}
 

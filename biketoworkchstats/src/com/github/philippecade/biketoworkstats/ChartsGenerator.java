@@ -32,8 +32,8 @@ import com.github.philippecade.biketoworkstats.model.DataPoint;
 public class ChartsGenerator {
 	
 	private static final Color BTW_BLUE = new Color(60, 176, 224);
-	private static final int IMAGE_WIDTH = 800;
-	private static final int IMAGE_HEIGHT = 600;
+	private static final int IMAGE_WIDTH = 1920;
+	private static final int IMAGE_HEIGHT = 1080;
 	private static final int NUM_CHART_COLUMNS = 2;
 
 	/**
