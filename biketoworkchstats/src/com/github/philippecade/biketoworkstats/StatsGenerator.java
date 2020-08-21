@@ -67,11 +67,6 @@ public class StatsGenerator {
 			reportGenerator.addTable(Arrays.asList("Member Name", "Total Kilometers"), memberTotalKm);
 			images.add(new ChartsGenerator().generateBarChartImage("Total Kilometers", "km", memberTotalKm));
 
-			List<DataPoint<Double>> memberKmPerDay = generateDataPoints(getAllMembers(teams), Member::compareKmPerDay, 
-					Member::getKmPerDay);
-			reportGenerator.addTable(Arrays.asList("Member Name", "Km per Day"), memberKmPerDay);
-			images.add(new ChartsGenerator().generateBarChartImage("Km Per Day", "km", memberKmPerDay));
-			
 			BufferedImage combinedImage = new ChartsGenerator().combineImages(images);
 			ImageIO.write(combinedImage, "PNG", getGraphOutputFile(inputFile));
 

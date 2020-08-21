@@ -5,17 +5,20 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
+import com.github.philippecade.biketoworkstats.model.HistoricalData;
 import com.github.philippecade.biketoworkstats.model.HistorizedMember;
 import com.github.philippecade.biketoworkstats.model.HistorizedTeam;
 import com.github.philippecade.biketoworkstats.model.Member;
@@ -27,28 +30,15 @@ import com.github.philippecade.biketoworkstats.model.Team;
  */
 class StatsReader {
 
-	private static final Logger LOGGER = LogManager.getLogManager().getLogger(StatsGenerator.class.getName());
-	
-	private static final int TEAM_NAME_COLUMN = 5;
-	private static final int TEAM_KM = 52;
-	private static final int TEAM_PERCENT_BY_BIKE = 49;
-	private static final int MEMBER_1_EMAIL = 18;
-	private static final int MEMBER_1_TOTAL_KM = 33;
-	private static final int MEMBER_1_PERCENT_BY_BIKE = 36;
-	private static final int MEMBER_1_KM_PER_DAY = 19;
-	private static final int MEMBER_2_EMAIL = 22;
-	private static final int MEMBER_2_TOTAL_KM = 37;
-	private static final int MEMBER_2_PERCENT_BY_BIKE = 40;
-	private static final int MEMBER_2_KM_PER_DAY = 23;
-	private static final int MEMBER_3_EMAIL = 26;
-	private static final int MEMBER_3_TOTAL_KM = 41;
-	private static final int MEMBER_3_PERCENT_BY_BIKE = 44;
-	private static final int MEMBER_3_KM_PER_DAY = 27;
-	private static final int MEMBER_4_EMAIL = 30;
-	private static final int MEMBER_4_TOTAL_KM = 45;
-	private static final int MEMBER_4_PERCENT_BY_BIKE = 48;
-	private static final int MEMBER_4_KM_PER_DAY = 31;
-	private static final int TIMESTAMP = 53;
+	private static final int MEMBER_1_FIRST_NAME = 8;
+	private static final int MEMBER_1_LAST_NAME = 9;
+	private static final int MEMBER_1_EMAIL = 10;
+	private static final int MEMBER_1_TEAM_NAME = 14;
+	private static final int MEMBER_1_BIKE_DAYS = 21;
+	private static final int MEMBER_1_NON_BIKE_DAYS = 22;
+	private static final int MEMBER_1_TOTAL_KM = 24;
+
+	private static final int MAX_COLUMNS = 25;
 	
 	/**
 	 * Reads the status file and returns the data model
@@ -58,27 +48,32 @@ class StatsReader {
 	 */
 	List<Team> readStatusFile(File file) throws IOException {
 		List<Team> teams = new ArrayList<>();
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
+		List<Member> members = new ArrayList<>();
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
 			// skip the first header line
 			String line = reader.readLine();
 			while ((line = reader.readLine()) != null) {
 				String[] columns = split(line);
-				if (columns.length < TIMESTAMP) {
+				if (columns.length < MAX_COLUMNS) {
 					continue;
 				}
 				
-				Team team = new Team(columns[TEAM_NAME_COLUMN]);
-				team.setKm(Double.parseDouble(columns[TEAM_KM]));
-				team.setByBike(Double.parseDouble(columns[TEAM_PERCENT_BY_BIKE]));
-
-				addNonEmptyMember(team, getMember(columns, MEMBER_1_EMAIL, MEMBER_1_TOTAL_KM, MEMBER_1_PERCENT_BY_BIKE, MEMBER_1_KM_PER_DAY));
-				addNonEmptyMember(team, getMember(columns, MEMBER_2_EMAIL, MEMBER_2_TOTAL_KM, MEMBER_2_PERCENT_BY_BIKE, MEMBER_2_KM_PER_DAY));
-				addNonEmptyMember(team, getMember(columns, MEMBER_3_EMAIL, MEMBER_3_TOTAL_KM, MEMBER_3_PERCENT_BY_BIKE, MEMBER_3_KM_PER_DAY));
-				addNonEmptyMember(team, getMember(columns, MEMBER_4_EMAIL, MEMBER_4_TOTAL_KM, MEMBER_4_PERCENT_BY_BIKE, MEMBER_4_KM_PER_DAY));
-				
-				teams.add(team);
+				members.add(getMember(columns));
 			}
 		}
+		
+		members.sort((m1, m2) -> m1.getTeamName().compareTo(m2.getTeamName()));
+		Team team = null;
+		for (Member m: members) {
+			if (team == null || !team.getName().equals(m.getTeamName())) {
+				team = new Team(m.getTeamName());
+				teams.add(team);
+			}
+			team.addMember(m);
+			team.setKm(team.getKm()+m.getKm());
+			team.setBikeDays(team.getBikeDays()+m.getBikeDays(), team.getNonBikeDays()+m.getNonBikeDays());
+		}
+
 		return teams;
 	}
 	
@@ -91,37 +86,49 @@ class StatsReader {
 	List<HistorizedTeam> readStatusFiles(File...files) throws IOException {
 		List<HistorizedTeam> teams = new ArrayList<>();
 		for (File file: files) {
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
 				// skip the first header line
 				String line = reader.readLine();
 				while ((line = reader.readLine()) != null) {
 					String[] columns = split(line);
-					if (columns.length < TIMESTAMP) {
+					if (columns.length < MAX_COLUMNS) {
 						continue;
 					}
-					Date timestamp = parseTimestamp(columns[TIMESTAMP]);
-					HistorizedTeam team = getTeam(teams, columns[TEAM_NAME_COLUMN]);
-					team.addKmAndBikeDays(timestamp, Double.parseDouble(columns[TEAM_KM]), Double.parseDouble(columns[TEAM_PERCENT_BY_BIKE]));
+					Date timestamp = getTimeStamp(file);
+					HistorizedTeam team = getTeam(teams, columns[MEMBER_1_TEAM_NAME]);
 					
-					addHistorizedMember(team, timestamp, columns, MEMBER_1_EMAIL, MEMBER_1_TOTAL_KM, MEMBER_1_PERCENT_BY_BIKE);
-					addHistorizedMember(team, timestamp, columns, MEMBER_2_EMAIL, MEMBER_2_TOTAL_KM, MEMBER_2_PERCENT_BY_BIKE);
-					addHistorizedMember(team, timestamp, columns, MEMBER_3_EMAIL, MEMBER_3_TOTAL_KM, MEMBER_3_PERCENT_BY_BIKE);
-					addHistorizedMember(team, timestamp, columns, MEMBER_4_EMAIL, MEMBER_4_TOTAL_KM, MEMBER_4_PERCENT_BY_BIKE);
+					getHistorizedMember(team, timestamp, columns);
 				}
+			}
+		}
+		
+		List<HistorizedMember> members = teams.stream().map(HistorizedTeam::getMembers).flatMap(Collection::stream)
+				.collect(Collectors.toList());
+		for (HistorizedMember member: members) {
+			for (HistoricalData data: member.getData()) {
+				// assumes all member's time stamps are synchronized
+				Date timestamp = data.getTimestamp(); 
+				HistorizedTeam team = getTeam(teams, member.getTeamName());
+				team.addKmAndBikeDays(timestamp, data.getKm(), data.getBikeDays(), data.getNonBikeDays());
 			}
 		}
 		return teams;
 	}
 
-	private void addHistorizedMember(HistorizedTeam team, Date timestamp, String[] columns, int emailIndex, int totalKmIndex, int daysPerBike) {
-		if (columns[emailIndex].isEmpty()) {
-			// teams with less than 4 members
-			return;
-		}
-		HistorizedMember member = getMember(team, columns, emailIndex);
-		String km = columns[totalKmIndex];
-		String byBike = columns[daysPerBike];
-		member.addKmAndBikeDays(timestamp, km.isEmpty() ? 0 : Double.parseDouble(km), byBike.isEmpty() ? 0 : Double.parseDouble(byBike));
+	private Date getTimeStamp(File file) throws IOException {
+		Path path = file.toPath();
+		BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
+		FileTime fileTime = attributes.creationTime();
+		return new Date(fileTime.toMillis());
+	}
+
+	private HistorizedMember getHistorizedMember(HistorizedTeam team, Date timestamp, String[] columns) {
+		HistorizedMember member = getMember(team, columns);
+		String km = columns[MEMBER_1_TOTAL_KM];
+		int nBikeDays = Integer.parseInt(columns[MEMBER_1_BIKE_DAYS]);
+		int nNonBikeDays = Integer.parseInt(columns[MEMBER_1_NON_BIKE_DAYS]);
+		member.addKmAndBikeDays(timestamp, km.isEmpty() ? 0 : Double.parseDouble(km), nBikeDays, nNonBikeDays);
+		return member;
 	}
 	
 	/**
@@ -140,14 +147,15 @@ class StatsReader {
 		return team;
 	}
 	
-	private HistorizedMember getMember(HistorizedTeam team, String[] columns, int memberEmailIndex) {
-		Optional<HistorizedMember> optional = team.getMember(columns[memberEmailIndex]);
+	private HistorizedMember getMember(HistorizedTeam team, String[] columns) {
+		Optional<HistorizedMember> optional = team.getMember(columns[MEMBER_1_EMAIL]);
 		if (optional.isPresent()) {
 			return optional.get();
 		}
 
 		HistorizedMember historizedMember = new HistorizedMember(
-				columns[memberEmailIndex - 2] + " " + columns[memberEmailIndex - 1], columns[memberEmailIndex]);
+				columns[MEMBER_1_FIRST_NAME] + " " + columns[MEMBER_1_LAST_NAME], columns[MEMBER_1_EMAIL]);
+		historizedMember.setTeamName(columns[MEMBER_1_TEAM_NAME]);
 		team.addMember(historizedMember);
 		return historizedMember;
 	}
@@ -160,23 +168,19 @@ class StatsReader {
 	 * @param daysPerBike
 	 * @return
 	 */
-	Member getMember(String[] columns, int emailIndex, int totalKmIndex, int daysPerBike, int kmPerDay) {
+	Member getMember(String[] columns) {
 		Member member = new Member();
-		member.setEmail(columns[emailIndex]);
-		member.setName(columns[emailIndex-2]+" "+columns[emailIndex-1]);
-		String km = columns[totalKmIndex];
+		member.setEmail(columns[MEMBER_1_EMAIL]);
+		member.setName(columns[MEMBER_1_FIRST_NAME]+" "+columns[MEMBER_1_LAST_NAME]);
+		member.setTeamName(columns[MEMBER_1_TEAM_NAME]);
+		String km = columns[MEMBER_1_TOTAL_KM];
 		if (!km.isEmpty()) {
-			member.setKm(Double.parseDouble(km));
+			double totalKm = Double.parseDouble(km);
+			member.setKm(totalKm);
 		}
-		String byBike = columns[daysPerBike];
-		if (!byBike.isEmpty()) {
-			member.setByBike(Double.parseDouble(byBike));
-		}
-		
-		String kmPerDayValue = columns[kmPerDay];
-		if (!kmPerDayValue.isEmpty()) {
-			member.setKmPerDay(Double.parseDouble(kmPerDayValue));
-		}
+		int nBikeDays = Integer.parseInt(columns[MEMBER_1_BIKE_DAYS]);
+		int nNonBikeDays = Integer.parseInt(columns[MEMBER_1_NON_BIKE_DAYS]);
+		member.setBikeDays(nBikeDays, nNonBikeDays);
 		return member;
 	}
 	
@@ -185,18 +189,6 @@ class StatsReader {
 		return Arrays.stream(line.split(";")).map(this::stripQuotes).toArray(String[]::new);
 	}
 	
-	private Date parseTimestamp(String timestamp) {
-		try {
-			// Example: 2019-04-12T13:52:20.186Z
-			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-			// Note: skips time time zone
-			return dateFormat.parse(timestamp);
-		} catch (ParseException e) {
-			LOGGER.log(Level.SEVERE, e.getMessage(), e);
-			return new Date();
-		}
-	}
-
 	private String stripQuotes(String s) {
 		String result = s;
 		if (result.startsWith("\"")) {
@@ -208,11 +200,4 @@ class StatsReader {
 		return result;
 	}
 	
-	private void addNonEmptyMember(Team team, Member member) {
-		if (!member.getEmail().isEmpty()) {
-			team.addMember(member);
-		}
-	}
-	
-
 }

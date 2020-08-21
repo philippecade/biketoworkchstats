@@ -22,5 +22,15 @@ public interface IParticipant {
 	 * @return Days per bike in percent (0..1)
 	 */
 	double getByBike();
+	
+	/**
+	 * @return Number of days per bike
+	 */
+	int getBikeDays();
+
+	/**
+	 * @return Number of days not per bike
+	 */
+	int getNonBikeDays();
 
 }

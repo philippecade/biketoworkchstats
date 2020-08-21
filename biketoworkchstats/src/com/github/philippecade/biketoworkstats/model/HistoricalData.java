@@ -11,9 +11,9 @@ public class HistoricalData {
 	private Date timestamp;
 	private ParticipantData data;
 
-	HistoricalData(Date timestamp, double km, double bikeDays) {
+	HistoricalData(Date timestamp, double km, int nBikeDays, int nNonBikeDays) {
 		this.timestamp = timestamp;
-		this.data = new ParticipantData(km, bikeDays);
+		this.data = new ParticipantData(km, nBikeDays, nNonBikeDays);
 	}
 	
 	public Date getTimestamp() {
@@ -22,6 +22,22 @@ public class HistoricalData {
 	
 	public double getKm() {
 		return this.data.getKm();
+	}
+
+	public void setKm(double km) {
+		this.data.setKm(km);
+	}
+	
+	public int getBikeDays() {
+		return this.data.getBikeDays();
+	}
+	
+	public int getNonBikeDays() {
+		return this.data.getNonBikeDays();
+	}
+	
+	public void setBikeDays(int nBikeDays, int nNonBikeDays) {
+		this.data.setBikeDays(nBikeDays, nNonBikeDays);
 	}
 
 	@Override

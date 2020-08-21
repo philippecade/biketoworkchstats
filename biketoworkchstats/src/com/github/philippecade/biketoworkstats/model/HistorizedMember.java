@@ -7,6 +7,7 @@ package com.github.philippecade.biketoworkstats.model;
 public class HistorizedMember extends AbstractHistorizedParticipant {
 	
 	private String email;
+	private String teamName;
 	
 	public HistorizedMember(String memberName, String email) {
 		super(memberName);
@@ -15,6 +16,14 @@ public class HistorizedMember extends AbstractHistorizedParticipant {
 	
 	public String getEmail() {
 		return this.email;
+	}
+	
+	public String getTeamName() {
+		return this.teamName;
+	}
+
+	public void setTeamName(String teamName) {
+		this.teamName = teamName;
 	}
 
 	@Override

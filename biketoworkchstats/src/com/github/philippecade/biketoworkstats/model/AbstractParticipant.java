@@ -19,8 +19,8 @@ public class AbstractParticipant implements IParticipant {
 		this.data.setKm(km);
 	}
 
-	public void setByBike(double byBike) {
-		this.data.setByBike(byBike);
+	public void setBikeDays(int nBikeDays, int nNonBikeDays) {
+		this.data.setBikeDays(nBikeDays, nNonBikeDays);
 	}
 
 	@Override
@@ -31,6 +31,16 @@ public class AbstractParticipant implements IParticipant {
 	@Override
 	public double getByBike() {
 		return this.data.getByBike();
+	}
+	
+	@Override
+	public int getBikeDays() {
+		return this.data.getBikeDays();
+	}
+
+	@Override
+	public int getNonBikeDays() {
+		return this.data.getNonBikeDays();
 	}
 
 	@Override
